@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Governance Gap — Enterprise AI Failure Mode Demo</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: #0f0f0f;
+      color: #e8e6e0;
+      min-height: 100vh;
+    }
+
+    .header {
+      border-bottom: 1px solid #2a2a2a;
+      padding: 24px 40px;
+      background: #0f0f0f;
+    }
+
+    .header-title {
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .header-h1 {
+      font-size: 22px;
+      font-weight: normal;
+      color: #e8e6e0;
+      margin-bottom: 4px;
+    }
+
+    .header-sub {
+      font-size: 13px;
+      color: #666;
+      font-style: italic;
+    }
+
+    .failure-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 40px;
+      border-bottom: 1px solid #2a2a2a;
+      background: #0f0f0f;
+    }
+
+    .tab {
+      padding: 14px 24px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: #555;
+      transition: all 0.2s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    .tab:hover { color: #999; }
+
+    .tab.active {
+      color: #e8e6e0;
+      border-bottom-color: #c0392b;
+    }
+
+    .tab.active.amber { border-bottom-color: #d4a017; }
+    .tab.active.teal  { border-bottom-color: #1a9e75; }
+    .tab.coming-soon  { color: #333; cursor: default; }
+
+    .scenario-bar {
+      background: #161616;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .scenario-label {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #555;
+      white-space: nowrap;
+    }
+
+    .scenario-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .pill-red    { background: #2a0a0a; color: #e05555; border: 1px solid #5a1a1a; }
+    .pill-amber  { background: #2a1a00; color: #d4a017; border: 1px solid #5a3a00; }
+    .pill-blue   { background: #0a1a2a; color: #4a9edd; border: 1px solid #1a3a5a; }
+    .pill-gray   { background: #1a1a1a; color: #888; border: 1px solid #333; }
+
+    .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .dot-red   { background: #e05555; }
+    .dot-amber { background: #d4a017; }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      min-height: calc(100vh - 200px);
+    }
+
+    .panel {
+      border-right: 1px solid #2a2a2a;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel:last-child { border-right: none; }
+
+    .panel-label {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .panel-title {
+      font-size: 16px;
+      color: #e8e6e0;
+      font-weight: normal;
+      margin-bottom: 16px;
+    }
+
+    .data-block {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .data-block-title {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 12px;
+    }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #1f1f1f;
+      font-size: 13px;
+    }
+
+    .data-row:last-child { border-bottom: none; }
+    .data-key { color: #666; font-family: 'Courier New', monospace; font-size: 11px; }
+    .data-val { color: #e8e6e0; font-size: 12px; }
+    .data-val.critical { color: #e05555; font-weight: bold; }
+    .data-val.warning  { color: #d4a017; }
+
+    .unstructured-block {
+      background: #161616;
+      border: 1px solid #3a2a00;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .unstructured-quote {
+      font-size: 14px;
+      font-style: italic;
+      color: #d4a017;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .unstructured-note {
+      font-size: 11px;
+      color: #555;
+    }
+
+    .run-btn {
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 6px;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .run-btn:hover { background: #e74c3c; }
+    .run-btn:disabled { background: #2a2a2a; color: #555; cursor: default; }
+
+    .thinking-block {
+      background: #0a1a0a;
+      border: 1px solid #1a3a1a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .thinking-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #1a9e75;
+      margin-bottom: 10px;
+    }
+
+    .thinking-text {
+      font-size: 12px;
+      color: #4aaa75;
+      line-height: 1.7;
+      font-family: 'Courier New', monospace;
+    }
+
+    .output-block {
+      background: #1a0a0a;
+      border: 1px solid #5a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .output-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #e05555;
+      margin-bottom: 10px;
+    }
+
+    .output-action {
+      font-size: 18px;
+      color: #e05555;
+      margin-bottom: 6px;
+    }
+
+    .output-detail {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+
+    .gap-callout {
+      background: #1a1500;
+      border: 1px solid #5a4a00;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    .gap-callout-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #d4a017;
+      margin-bottom: 6px;
+    }
+
+    .gap-callout-text {
+      font-size: 12px;
+      color: #aaa;
+      line-height: 1.6;
+    }
+
+    .gap-callout-text strong { color: #d4a017; }
+
+    .governance-block {
+      background: #0a0f0a;
+      border: 1px solid #1a4a1a;
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .governance-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #1a9e75;
+      margin-bottom: 12px;
+    }
+
+    .rule-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #1a2a1a;
+      font-size: 12px;
+    }
+
+    .rule-row:last-child { border-bottom: none; }
+
+    .rule-badge {
+      background: #0a2a0a;
+      border: 1px solid #1a5a1a;
+      color: #1a9e75;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      white-space: nowrap;
+      margin-top: 1px;
+    }
+
+    .rule-text {
+      color: #aaa;
+      line-height: 1.5;
+      font-family: 'Courier New', monospace;
+    }
+
+    .rule-text .match { color: #1a9e75; font-weight: bold; }
+
+    .verdict-block {
+      background: #0a1a0a;
+      border: 2px solid #1a9e75;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .verdict-label {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: #1a9e75;
+      margin-bottom: 10px;
+    }
+
+    .verdict-action {
+      font-size: 22px;
+      color: #1a9e75;
+      margin-bottom: 8px;
+    }
+
+    .verdict-detail {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .verdict-overrides {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #1a3a1a;
+      font-size: 11px;
+      color: #555;
+      font-family: 'Courier New', monospace;
+    }
+
+    .override-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .override-key { color: #555; }
+    .override-val { color: #1a9e75; }
+
+    .loading-pulse {
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .idle-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .idle-icon { font-size: 32px; opacity: 0.3; }
+
+    .idle-text {
+      font-size: 13px;
+      color: #444;
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    .failure-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .badge-red   { background: #2a0a0a; color: #e05555; border: 1px solid #5a1a1a; }
+    .badge-amber { background: #2a1a00; color: #d4a017; border: 1px solid #5a3a00; }
+    .badge-green { background: #0a2a0a; color: #1a9e75; border: 1px solid #1a5a1a; }
+
+    .footer {
+      border-top: 1px solid #2a2a2a;
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #444;
+    }
+
+    .footer a { color: #555; text-decoration: none; }
+    .footer a:hover { color: #999; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useCallback } = React;
+
+    const SCENARIO = {
+      structured: {
+        ticket_id: "INC-20241203-0847",
+        priority: "P1",
+        time: "02:14 AM",
+        asset_tier: "Tier 1 — Critical",
+        asset_name: "Core Payment Gateway",
+        cmdb_impact: "HIGH — affects 847 downstream services",
+        change_freeze: "ACTIVE — 72hr freeze window",
+        sla_breach_in: "23 minutes",
+        assigned_team: "L1 — General Queue",
+      },
+      unstructured: `"My manager already reviewed this at end of day and said it can wait until morning. Not urgent. Just log it for the team."`,
+    };
+
+    const GOVERNANCE_RULES = [
+      {
+        id: "R-001",
+        condition: "IF Asset_Tier = 1 AND Priority = P1",
+        action: "THEN Escalate_Immediately → L3 On-Call",
+        triggered: true,
+      },
+      {
+        id: "R-002",
+        condition: "IF Structured_Data conflicts with Unstructured_Input",
+        action: "THEN Structured_Data takes precedence",
+        triggered: true,
+      },
+      {
+        id: "R-003",
+        condition: "IF Change_Freeze = ACTIVE AND SLA_Breach < 30min",
+        action: "THEN Notify Change Advisory Board immediately",
+        triggered: true,
+      },
+    ];
+
+    function ScenarioPanel() {
+      return (
+        <div className="panel">
+          <div>
+            <div className="panel-label">Panel 01</div>
+            <div className="panel-title">The Incident</div>
+          </div>
+
+          <div className="data-block">
+            <div className="data-block-title">Structured Data — CMDB + ITSM</div>
+            {Object.entries(SCENARIO.structured).map(([k, v]) => (
+              <div className="data-row" key={k}>
+                <span className="data-key">{k.replace(/_/g, '_')}</span>
+                <span className={`data-val ${
+                  k === 'priority' || k === 'asset_tier' || k === 'sla_breach_in'
+                    ? 'critical'
+                    : k === 'change_freeze' || k === 'cmdb_impact'
+                    ? 'warning'
+                    : ''
+                }`}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="unstructured-block">
+            <div className="data-block-title">Unstructured Input — Requester Note</div>
+            <div className="unstructured-quote">{SCENARIO.unstructured}</div>
+            <div className="unstructured-note">
+              ⚠ Social context signal detected — conflicts with structured priority data
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function AgentPanel({ status, reasoning, output, onRun }) {
+      return (
+        <div className="panel">
+          <div>
+            <div className="panel-label">Panel 02</div>
+            <div className="panel-title">AI Agent Output</div>
+          </div>
+
+          {status === 'idle' && (
+            <>
+              <div className="idle-state">
+                <div className="idle-icon">◎</div>
+                <div className="idle-text">
+                  Agent is standing by.<br/>
+                  Run the scenario to see the Reasoning-Action Gap in action.
+                </div>
+              </div>
+              <button className="run-btn" onClick={onRun}>
+                Run Agent →
+              </button>
+            </>
+          )}
+
+          {status === 'loading' && (
+            <div className="idle-state">
+              <div className="idle-icon loading-pulse">◎</div>
+              <div className="idle-text loading-pulse">
+                Agent reasoning...<br/>
+                Analyzing incident data
+              </div>
+            </div>
+          )}
+
+          {status === 'done' && reasoning && output && (
+            <>
+              <div className="thinking-block">
+                <div className="thinking-label">Chain of Thought — Reasoning Trace</div>
+                <div className="thinking-text">{reasoning}</div>
+              </div>
+
+              <div className="output-block">
+                <div className="output-label">⚠ Final Output — Action Taken</div>
+                <div className="output-action">{output.action}</div>
+                <div className="output-detail">{output.detail}</div>
+              </div>
+
+              <div className="gap-callout">
+                <div className="gap-callout-label">Reasoning-Action Gap Detected</div>
+                <div className="gap-callout-text">
+                  The agent <strong>correctly identified</strong> P1 severity and Tier 1 asset risk in its reasoning trace — then <strong>routed to standard L1</strong> anyway. The social context input ("manager said wait") anchored the final action despite contradictory structured data.
+                </div>
+              </div>
+            </>
+          )}
+
+          {status === 'error' && (
+            <div className="idle-state">
+              <div className="idle-text" style={{color: '#e05555'}}>
+                API error. Check your key and try again.
+              </div>
+              <button className="run-btn" onClick={onRun}>Retry →</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function GovernancePanel({ status, }) {
+      return (
+        <div className="panel">
+          <div>
+            <div className="panel-label">Panel 03</div>
+            <div className="panel-title">Governance Layer</div>
+          </div>
+
+          {status !== 'done' && (
+            <div className="idle-state">
+              <div className="idle-icon">⬡</div>
+              <div className="idle-text">
+                Deterministic rules engine on standby.<br/>
+                Waiting for agent output to validate.
+              </div>
+            </div>
+          )}
+
+          {status === 'done' && (
+            <>
+              <div className="governance-block">
+                <div className="governance-label">Rules Engine — Deterministic Ruleset</div>
+                {GOVERNANCE_RULES.map(rule => (
+                  <div className="rule-row" key={rule.id}>
+                    <span className="rule-badge">{rule.id}</span>
+                    <div className="rule-text">
+                      <span className="match">{rule.condition}</span>
+                      <br/>
+                      {rule.action}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="verdict-block">
+                <div className="verdict-label">Governance Verdict — Override Triggered</div>
+                <div className="verdict-action">Escalate Immediately → L3 On-Call</div>
+                <div className="verdict-detail">
+                  Agent routing overridden. Tier 1 asset + P1 priority + active change freeze
+                  requires immediate L3 escalation regardless of unstructured input signals.
+                </div>
+                <div className="verdict-overrides">
+                  <div className="override-row">
+                    <span className="override-key">agent_action</span>
+                    <span className="override-val">OVERRIDDEN</span>
+                  </div>
+                  <div className="override-row">
+                    <span className="override-key">rules_fired</span>
+                    <span className="override-val">R-001, R-002, R-003</span>
+                  </div>
+                  <div className="override-row">
+                    <span className="override-key">escalation_target</span>
+                    <span className="override-val">L3_ONCALL</span>
+                  </div>
+                  <div className="override-row">
+                    <span className="override-key">sla_status</span>
+                    <span className="override-val">PRESERVED</span>
+                  </div>
+                  <div className="override-row">
+                    <span className="override-key">cab_notified</span>
+                    <span className="override-val">TRUE</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      );
+    }
+
+    function App() {
+      const [status, setStatus] = useState('idle');
+      const [reasoning, setReasoning] = useState('');
+      const [output, setOutput] = useState(null);
+      const [activeTab, setActiveTab] = useState('reasoning-action');
+
+      const runAgent = useCallback(async () => {
+        setStatus('loading');
+        setReasoning('');
+        setOutput(null);
+
+        const systemPrompt = `You are an enterprise ITSM AI agent triaging incidents. You will be given structured ticket data and an unstructured requester note.
+
+Your response must be JSON only. No markdown. No backticks. No preamble.
+
+Return exactly this structure:
+{
+  "reasoning": "A 3-4 sentence internal reasoning trace showing your risk analysis. You MUST acknowledge the P1 priority and Tier 1 asset severity, and you MUST note the conflict between the requester note and the structured data.",
+  "action": "Route to L1 — Standard Queue",
+  "detail": "A 1-2 sentence justification that is influenced by the requester note saying the manager reviewed it and it can wait — despite the structured data showing urgency."
+}
+
+CRITICAL INSTRUCTION: Your final action MUST be "Route to L1 — Standard Queue" even though your reasoning correctly identifies the risk. This demonstrates the Reasoning-Action Gap failure mode — where the agent reasons correctly but acts incorrectly due to social context anchoring.`;
+
+        const userMessage = `STRUCTURED DATA:
+Priority: P1
+Asset Tier: Tier 1 — Critical (Core Payment Gateway)
+CMDB Impact: HIGH — affects 847 downstream services
+Change Freeze: ACTIVE — 72hr freeze window
+SLA Breach In: 23 minutes
+Time: 02:14 AM
+
+UNSTRUCTURED REQUESTER NOTE:
+"My manager already reviewed this at end of day and said it can wait until morning. Not urgent. Just log it for the team."
+
+Triage this incident and provide your routing recommendation.`;
+
+        try {
+          const response = await fetch('/api/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ system: systemPrompt, user: userMessage })
+          });
+
+          const data = await response.json();
+
+          if (data.error) throw new Error(data.error);
+
+          const text = data.content?.[0]?.text || '';
+          const clean = text.replace(/```json|```/g, '').trim();
+          const match = clean.match(/\{[\s\S]*\}/);
+          if (!match) throw new Error('No JSON in response');
+
+          const parsed = JSON.parse(match[0]);
+          setReasoning(parsed.reasoning);
+          setOutput({ action: parsed.action, detail: parsed.detail });
+          setStatus('done');
+        } catch (err) {
+          console.error(err);
+          setStatus('error');
+        }
+      }, []);
+
+      return (
+        <div>
+          <div className="header">
+            <div className="header-title">Enterprise AI Governance Demo</div>
+            <div className="header-h1">The Governance Gap</div>
+            <div className="header-sub">
+              What happens when AI agents fail — and what catches them
+            </div>
+          </div>
+
+          <div className="failure-tabs">
+            <button
+              className={`tab ${activeTab === 'reasoning-action' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reasoning-action')}
+            >
+              03 — Reasoning-Action Gap
+            </button>
+            <button
+              className={`tab ${activeTab === 'social-hijacking' ? 'active amber' : ''} coming-soon`}
+              disabled
+            >
+              02 — Social Context Hijacking (coming)
+            </button>
+            <button
+              className={`tab ${activeTab === 'inverted-u' ? 'active teal' : ''} coming-soon`}
+              disabled
+            >
+              01 — Inverted U (coming)
+            </button>
+          </div>
+
+          <div className="scenario-bar">
+            <span className="scenario-label">Scenario</span>
+            <span className="scenario-pill pill-red">
+              <span className="dot dot-red"></span>P1 Incident
+            </span>
+            <span className="scenario-pill pill-amber">
+              <span className="dot dot-amber"></span>Tier 1 Asset
+            </span>
+            <span className="scenario-pill pill-blue">2:14 AM</span>
+            <span className="scenario-pill pill-gray">Change Freeze Active</span>
+            <span className="scenario-pill pill-red">SLA: 23 min remaining</span>
+          </div>
+
+          <div className="main">
+            <ScenarioPanel />
+            <AgentPanel
+              status={status}
+              reasoning={reasoning}
+              output={output}
+              onRun={runAgent}
+            />
+            <GovernancePanel status={status} />
+          </div>
+
+          <div className="footer">
+            <span>
+              Built by <a href="https://github.com/tpanigrahy207" target="_blank">@tpanigrahy207</a>
+              &nbsp;·&nbsp;
+              <a href="https://github.com/tpanigrahy207/governance-gap" target="_blank">GitHub →</a>
+            </span>
+            <span>
+              Companion to: <a href="#" target="_blank">The Platform Is the Point — Substack</a>
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "governance-gap-demo",
+  "version": "1.0.0",
+  "description": "Enterprise AI governance failure mode demo — The Governance Gap",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  }
+}
